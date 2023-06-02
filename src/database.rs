@@ -1,4 +1,4 @@
-use std::{path::Path, env};
+use std::{path::{Path, PathBuf}, env};
 
 use rusqlite::{Connection, Result};
 
@@ -27,7 +27,7 @@ pub fn split_database(source: &str, output_dir: &str, output_pattern: fn(u32) ->
         })
     })?;
 
-    let base_path = Path::new(output_dir);
+    let base_path = PathBuf::from(output_dir);
     let paths: Vec<String> = (0..m-1).map(|n| {
         let str = output_pattern(n);
         let filename = Path::new(str.as_str());
@@ -37,7 +37,7 @@ pub fn split_database(source: &str, output_dir: &str, output_pattern: fn(u32) ->
 
     let mut output_dbs: Vec<Connection> = (0..m-1).map(|n| -> Connection {
         let filename = format!("{}", output_pattern(n));
-        let path = env::join_paths([base_path, Path::new(filename.as_str())]).unwrap();
+        let path = base_path.join(Path::new(filename.as_str()));
         create_database(path.to_str().unwrap()).unwrap()
     }).collect();
 
@@ -49,5 +49,5 @@ pub fn split_database(source: &str, output_dir: &str, output_pattern: fn(u32) ->
         conn.execute("INSERT INTO pairs ({}, {});", (p.key, p.value))?;
     }
 
-    Ok(Vec::new())
+    Ok(paths)
 }
